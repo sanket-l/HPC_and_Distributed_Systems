@@ -7,4 +7,3 @@ run: all
 clean:
 	rm -f simulator.bin
 	rm -rf output
-	rm -rf plots

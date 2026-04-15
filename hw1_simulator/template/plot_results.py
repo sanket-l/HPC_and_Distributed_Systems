@@ -33,6 +33,8 @@ for dist in DISTRIBUTIONS:
             # Read the data
             with open(result_file, 'r') as f:
                 data = [float(line.strip()) for line in f.readlines()]
+
+            # data = data[:100]  # Limit to first 100 memory modules for better visualization
             
             # X-axis is memory module index (0 to len(data)-1)
             x = list(range(len(data)))
