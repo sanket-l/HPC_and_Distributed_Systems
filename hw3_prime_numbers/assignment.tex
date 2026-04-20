@@ -1,0 +1,222 @@
+\pdfminorversion=6
+\documentclass[12pt]{article}
+\usepackage[paper=letterpaper,margin=1in]{geometry}
+\usepackage{multicol}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{float}
+\usepackage{hyperref}
+
+% remove lists indentation
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*, itemsep=6pt, topsep=0pt, parsep=0pt}
+\setlist[enumerate]{leftmargin=*, itemsep=6pt, topsep=0pt, parsep=0pt}
+
+% discourage single lines at top/bottom of pages
+\widowpenalty=10000
+\clubpenalty=10000
+\displaywidowpenalty=10000
+
+%folder for graphics
+\graphicspath{{./figs/}}
+
+% pseudocode
+\usepackage[linesnumbered,lined,ruled,commentsnumbered]{algorithm2e}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begingroup
+\centering
+\LARGE Parallel and Distributed Computing: Homework 3\par
+\vspace{10pt}
+\endgroup
+\noindent
+\fbox{
+  \parbox{\textwidth}{
+    \textbf{Objectives:}\\
+    This is the first assignment to illustrate and practice multithreaded programming. You will be able to put to practice what was presented in class regarding a protected data structure, in this particular case a common counter, and the creation of threads capable of running simultaneously in a multi-core system. The prime number printing program is important in its own right and is simple enough for all to understand. A testing for prime addendum is given.}
+}  
+\vspace{6pt}
+
+%============================================================================
+\begin{multicols}{2}  
+  Consider the following computer program that computes and prints all primes between 1 and $10^{7}$.
+\vspace{6pt}
+  
+    \begin{algorithm}[H] %algorithm* uses two columns
+      \footnotesize
+      \SetAlgoLined
+      \SetKwProg{Def}{Function}{:}{\KwRet} %define shape of function
+      \SetKwFunction{pprint}{prime\_printer} % define function's names
+      \SetKwFunction{isprime}{isPrime}
+      \SetKwFunction{printf}{printf}
+
+      \Def{\pprint{}}{
+        \emph{i} $\leftarrow$ 1\;
+        \emph{limit} $\leftarrow$ $10^7$\;
+        \While{\emph{i} $\leq$ \emph{limit}}{
+          \If{\isprime{i}}{
+            \printf{i}
+          }
+          \emph{i} $\leftarrow$ \emph{i}$+1$\;
+        }
+      }
+      \caption{Prime printer}
+      \vspace{-3pt}
+    \end{algorithm}
+
+%===========================================================
+\subsection*{Assignment}
+
+Your task is to: \textbf{(1)} Utilizing the provided template code, implement in \texttt{primes.c} two versions of the prime printer program in C, and \textbf{(2)} provide a comparative analysis between the two implementations.
+
+\begin{itemize}
+  \item \texttt{primes\_seq(max, verb)}: \\
+        Sequential (single-thread) version, that receives two parameters: The maximum (inclusive) number to test as prime \texttt{max}, and a verbosity variable \texttt{verb} that will indicate whether your function prints the number to \texttt{stdout} or not.
+
+  \item \texttt{primes\_par(max, threads, verb)}: \\
+        Concurrent (multi-threaded) version, that in addition to the previous parameters also receives the number of threads \texttt{threads} that it will use to parallelize the task. This number is an integer greater than or equal to 1. 
+\end{itemize}
+
+\paragraph{The computation:} Both of your functions will calculate and print the prime numbers from 1 to the given maximum, which will be always less or equal than $10^7$.
+After finding and maybe printing the prime numbers, the program prints the time taken by your \texttt{primes\_}  function. (This is already in the \texttt{main.c} template file).
+
+For the sequential (single-threaded) version, the computation is straightforward. Check the ``shortcuts'' in the first addendum.
+
+For the parallel (multi-threaded) version, check the ideas discussed in the second addendum. They may be helpful. 
+
+\paragraph{Makefile:} The provided template has a Makefile with three targets:
+\begin{itemize}
+  \item \texttt{build}: compile and link the binary from the source code.
+  \item \texttt{test}: test that the result of the sequential version is equivalent to the result of the parallel version.
+  \item \texttt{clean}: delete building and testing artifacts.
+\end{itemize}
+
+So to build and test your results, you can simply run ``\texttt{make build test}''. Note that the test only check that the sequential and parallel implementations output the same. That does not ensure correctness.
+
+\paragraph{Achieving parallelism:} Feel free to use \texttt{pthread} or \texttt{openMP} to implement the parallel version of the function. To obtain meaningful experimental results, a computer with a multi-core processor should be used. A four-core processor is strongly recommended.
+
+\paragraph{The output:} If the \texttt{verb} argument is set, your functions shall print the primes found to standard output. The numbers don't need to be sorted. Print one number per line. You can use something like this:\\
+\centerline{\texttt{printf("\%d\textbackslash n", prime\_found);}}\\
+to print the numbers.
+The \texttt{main} function in \texttt{main.c} will add an extra line at the end with the total execution time in seconds with 8 decimal positions.
+
+%===========================================================
+\subsection*{Report}
+Write a report of a maximum of 3 pages. {\em Do not forget to include your name and student ID number on the top of the first page of your report.} The report must consist of the following parts:
+\begin{itemize}
+  \item A description of the system where the programs were executed: Processor, RAM, and Operative System.
+  \item A comparative table showing, on the search up to $10^7$, the execution times of the single-thread version, and the multi-thread with 1, 2, 4, 8, 16, 32, 64, and 128 threads.
+  \item An analysis of the performance of the programs with emphasis on correctness and speedup.
+  \item An analysis of the single-thread version versus the multi-thread version with only one thread. Is there a difference? How do you explain the results? Add plots and figures as necessary to explain your results.
+\item What happens if Simultaneous Multi-Threading is enabled or disabled?
+\href{http://blog.logicalincrements.com/2017/10/what-is-hyper-threading-simultaneous-multithreading/}{\tt {blog.logicalincrements.com}}
+
+\end{itemize}
+
+
+%===========================================================
+\subsection*{Submission}
+Submit \textbf{one} zip file named \texttt{hw3.zip}, containing \textbf{exactly 3 files}. Make sure the zip file does \textbf{not} include sub-directories (as Mac's default compression tool does) or extra files:
+\begin{enumerate}
+\item \texttt{primes.c}: The well commented C source code of your single and multi threaded implementation of the functions here described. \textbf{Do not submit any other source code file. The signature of the functions must be exactly as it is given to you in the template}.
+\item \texttt{report.pdf}: The digitally produced report.
+\item \texttt{team.txt}: Text file with two lines containing the UCINetID and name of each student in your team:\\
+  \texttt{<UCINetID> <firstName> <lastName>}
+\end{enumerate}
+
+\end{multicols}
+
+
+
+
+
+
+
+
+%===========================================================
+%===========================================================
+\clearpage
+\noindent%
+\begin{center}
+  {\Large Addendum 1: Checking if a Number is Prime.}\par    
+  {\color{red} \footnotesize This article was copied from the Internet and converted into a Latex document. The original Internet article is no longer available.}
+\end{center}
+\vspace{10pt}
+
+% Original article available in:\\
+% \url{http://www.counton.org/explorer/primes/checking-if-a-number-is-prime/}
+ 
+You may remember that a prime number is one whose only factors are itself and 1. Other numbers are called oblong numbers (they can be represented as an oblong of dots) or composite numbers.
+
+Today we examine some shortcuts for finding the prime numbers.
+
+Let's take 37 for example. Is it prime?
+
+One way is to try each number in turn, from 2 to 37 to see if any of them divide exactly in to 37.
+
+On your calculator this is easy, because the answer to this division calculation would end with ".0" or just show as a whole number. If it shows anything after a decimal point, then it didn't divide into 37 exactly.
+
+\paragraph{A Shortcut:} One shortcut is to realise that if, say, 15 did divide into the number we are testing, then so would 3 and also 5 since $15 = 3 \times 5$.
+
+Similarly, if 18 was a factor of the number being tested, since $18 = 2 \times 9 = 2 \times 3 \times 3$ then 2 would also be a factor and so would 3 (and also $2 \times 3 = 6$ and $3 \times 3 = 9$).
+
+So one shortcut is: Only test prime numbers smaller than the number you are testing as possible factors.
+
+So, instead of checking $2,3,4,5,6,7,\dots,35,36$ to see if 37 is prime, we need only test $2,3,5,7,11,13,17,19,23,29,31$. But there is another shortcut too:
+
+\paragraph{Another shortcut!:} Since 3 is a factor of 18 and $18 / 3 = 6$, then $18 = 3 \times 6$. We need only test the smaller number, 3, to see if it is a factor of 18 and not 6.
+
+Similarly, 5 is a factor 20 and $20 = 5 \times 4$ so we need only test the smaller number 4 as a factor.
+
+But what if we don't know the factors of a number? So, testing a number to see if it is prime means we need only test the ``smaller'' factors. But where do smaller factors stop and larger factors start? The principle here is:
+
+\textbf{Suppose one number is a factor of N and that it is smaller than the square-root of the number N. Then the second factor must be larger than the square-root.} 
+
+We can see this with the examples above: For 18, we need only test numbers up to the square-root of 18 which is $4.243$, i.e. up to 4. This is much quicker than testing all the numbers up to 17.
+
+For 25, we need to test numbers up to and including the square-root of 25, which is 5.
+And for 37, we need only go up to 6 (since $6 \times 6 = 36$ so the square-root of 37 will be only a little bit larger).
+
+\paragraph{Which numbers to test as factors:} Putting these two shortcuts together, we need only test those prime numbers up to 6 to see if they are factors of 37. If any are, the number is not prime (it is composite) and if none of them are, then the only factors would be 1 and 37 and 37 would be prime.
+The numbers to test are therefore:
+
+\begin{itemize}
+  \item \textbf{2}, but 37 is not even, so 2 is not a factor of 37.
+  \item \textbf{3}, but $37/3 = 12.3333$ so 3 does not divide exactly into 37 either.
+  \item \textbf{5}, but 37 does not end with 0 or 5 so 5 is not a factor of 37
+  \item \textbf{7} is the next prime, but it is bigger than the square-root of 36, so we can stop now.
+\end{itemize}
+So 37 has no factors (except 1 and 37 of course) and therefore 37 is a prime number.
+
+Can you extend the list of prime numbers above up to 100? \emph{(Hint: since $10 \times 10 = 100$, you only need to know the primes up to $10$: $(2,3,5,7)$ and only use these as test divisors in order to test any number up to $100$ to see if it is prime.)}
+
+
+
+
+%===========================================================
+%===========================================================
+\noindent%
+\vspace{10pt}
+\begin{center}
+  {\Large Addendum 2: Ideas for a Parallel Implementation.}\par
+\end{center}
+\vspace{10pt}
+
+For the parallel (multi-threaded) version, as a first attempt to parallelization, you might consider giving each thread an equal share of the input domain to distribute the input set evenly. For example, if 10 threads are used to find primes up to $10,000,000$, each thread might check intervals of $10^{6}$ consecutive numbers.
+
+However, this approach fails to distribute the load in a balanced manner because equal ranges of inputs do not necessarily produce equal amounts of work. Primes do not occur uniformly: there are many primes between $10^{0}$ and $10^{6}$, but hardly any between $9\cdot10^6$ and $10^{7}$. In addition, the time complexity of the prime checker is proportional to the number tested. Therefore, the larger the numbers in the interval, the slower the prime test.
+
+\vspace{5pt}
+
+A more promising way to split the work among the threads is to assign to each thread successive integers, one at a time to threads ready to run. When a thread is finished testing an integer, it asks for another number from a central source (shared concurrent data structure.)
+
+In this particular case, the assignment of a single integer at a time is done using a shared counter accessible by each thread, one thread at a time. Each thread accessing the counter reads the counter and increases it to generate the next integer to be tested by the next thread requesting an integer.
+
+To safely increase the shared counter in this concurrent execution, a synchronization mechanism (such as mutex) must be used.
+
+\end{document}
+
+
