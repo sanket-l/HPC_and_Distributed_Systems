@@ -1,0 +1,33 @@
+rakmo33@Omkars-MacBook-Air HPC_and_Distributed_Systems % system_profiler SPHardwareDataType
+
+Hardware:
+
+    Hardware Overview:
+
+      Model Name: MacBook Air
+      Model Identifier: Mac16,12
+      Model Number: MW123LL/A
+      Chip: Apple M4
+      Total Number of Cores: 10 (4 performance and 6 efficiency)
+      Memory: 16 GB
+      System Firmware Version: 13822.1.2
+      OS Loader Version: 13822.1.2
+      Serial Number (system): HVQP4K9WTK
+      Hardware UUID: D9FAE09A-3B8A-5CE8-B2A0-4C8D27B640A1
+      Provisioning UDID: 00008132-001819A90150401C
+      Activation Lock Status: Enabled
+
+rakmo33@Omkars-MacBook-Air HPC_and_Distributed_Systems % sw_vers         
+ProductName:            macOS
+ProductVersion:         26.0.1
+BuildVersion:           25A362
+rakmo33@Omkars-MacBook-Air HPC_and_Distributed_Systems % sysctl -n hw.physicalcpu hw.logicalcpu hw.nperflevels
+
+10
+10
+2
+rakmo33@Omkars-MacBook-Air HPC_and_Distributed_Systems % sysctl hw.perflevel0.physicalcpu hw.perflevel1.physicalcpu
+
+hw.perflevel0.physicalcpu: 4
+hw.perflevel1.physicalcpu: 6
+rakmo33@Omkars-MacBook-Air HPC_and_Distributed_Systems % 
