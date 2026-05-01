@@ -22,85 +22,133 @@ void mat_multiply(Mat *A, Mat *B, Mat *C, unsigned int threads)
     //
     // - num_threads(threads)
     //   Set the number of threads to use.
-    // #pragma omp parallel for default(none) shared(A, B, C) num_threads(threads)
-    //     for (unsigned int i = 0; i < A->m; i++)
-    //     {
-    //         for (unsigned int j = 0; j < B->n; j++)
-    //         {
-    //             double tmp = 0.0;
-    //             for (unsigned int k = 0; k < A->n; k++)
-    //             {
-    //                 tmp += A->ptr[i * A->n + k] * B->ptr[k * B->n + j];
-    //             }
-    //             C->ptr[i * C->n + j] = tmp;
-    //         }
-    //     }
+    /*
+   PERMUTATION 1: i → j → k (classic form)
 
-    // #pragma omp parallel for default(none) shared(A, B, C) num_threads(threads)
-    //     for (unsigned int i = 0; i < A->m; i++)
-    //     {
-    //         for (unsigned int k = 0; k < A->n; k++)
-    //         {
-    //             double a_val = A->ptr[i * A->n + k];
-    //             for (unsigned int j = 0; j < B->n; j++)
-    //             {
-    //                 C->ptr[i * C->n + j] += a_val * B->ptr[k * B->n + j];
-    //             }
-    //         }
-    //     }
+   Outer loop: i (parallelized)
+   Each thread computes full rows of C
+   Good: simple, safe
+   Bad: poor cache usage for B (column access)
+   */
 
-    // #pragma omp parallel for default(none) shared(A, B, C) num_threads(threads)
-    //     for (unsigned int j = 0; j < B->n; j++)
-    //     {
-    //         for (unsigned int i = 0; i < A->m; i++)
-    //         {
-    //             double tmp = 0.0;
-    //             for (unsigned int k = 0; k < A->n; k++)
-    //             {
-    //                 tmp += A->ptr[i * A->n + k] * B->ptr[k * B->n + j];
-    //             }
-    //             C->ptr[i * C->n + j] = tmp;
-    //         }
-    //     }
+    /*
+    #pragma omp parallel for default(none) shared(A,B,C,m,n,p) num_threads(threads)
+    for (unsigned int i = 0; i < m; i++) {
+        for (unsigned int j = 0; j < p; j++) {
+            double tmp = 0.0;
+            for (unsigned int k = 0; k < n; k++) {
+                tmp += A->ptr[i * n + k] * B->ptr[k * p + j];
+            }
+            C->ptr[i * p + j] = tmp;
+        }
+    }
+    */
 
-    // #pragma omp parallel for default(none) shared(A, B, C) num_threads(threads)
-    //     for (unsigned int j = 0; j < B->n; j++)
-    //     {
-    //         for (unsigned int k = 0; k < A->n; k++)
-    //         {
-    //             double b_val = B->ptr[k * B->n + j];
-    //             for (unsigned int i = 0; i < A->m; i++)
-    //             {
-    //                 C->ptr[i * C->n + j] += A->ptr[i * A->n + k] * b_val;
-    //             }
-    //         }
-    //     }
+    /*
+    PERMUTATION 2: i → k → j (BEST - ACTIVE)
 
-    // #pragma omp parallel for default(none) shared(A, B, C) num_threads(threads)
-    //     for (unsigned int k = 0; k < A->n; k++)
-    //     {
-    //         for (unsigned int i = 0; i < A->m; i++)
-    //         {
-    //             double a_val = A->ptr[i * A->n + k];
-    //             for (unsigned int j = 0; j < B->n; j++)
-    //             {
-    // #pragma omp atomic
-    //                 C->ptr[i * C->n + j] += a_val * B->ptr[k * B->n + j];
-    //             }
-    //         }
-    //     }
+    Outer loop: i (parallelized)
+    Excellent cache locality:
+    - A reused in registers
+    - B accessed row-wise
+    - C updated sequentially
+    */
 
-    // #pragma omp parallel for default(none) shared(A, B, C) num_threads(threads)
-    //     for (unsigned int k = 0; k < A->n; k++)
-    //     {
-    //         for (unsigned int j = 0; j < B->n; j++)
-    //         {
-    //             double b_val = B->ptr[k * B->n + j];
-    //             for (unsigned int i = 0; i < A->m; i++)
-    //             {
-    // #pragma omp atomic
-    //                 C->ptr[i * C->n + j] += A->ptr[i * A->n + k] * b_val;
-    //             }
-    //         }
-    //     }
+    /*
+    #pragma omp parallel for default(none) shared(A,B,C,m,n,p) num_threads(threads)
+    for (unsigned int i = 0; i < m; i++) {
+        for (unsigned int j = 0; j < p; j++) {
+            C->ptr[i * p + j] = 0.0;
+        }
+
+        for (unsigned int k = 0; k < n; k++) {
+            double a_val = A->ptr[i * n + k];
+            for (unsigned int j = 0; j < p; j++) {
+                C->ptr[i * p + j] += a_val * B->ptr[k * p + j];
+            }
+        }
+    }
+    */
+
+    /*
+    PERMUTATION 3: j → i → k
+
+    Outer loop: j (parallelized)
+    Column-wise computation of C
+    Poor locality for C and B
+    */
+
+    /*
+    #pragma omp parallel for default(none) shared(A,B,C,m,n,p) num_threads(threads)
+    for (unsigned int j = 0; j < p; j++) {
+        for (unsigned int i = 0; i < m; i++) {
+            double tmp = 0.0;
+            for (unsigned int k = 0; k < n; k++) {
+                tmp += A->ptr[i * n + k] * B->ptr[k * p + j];
+            }
+            C->ptr[i * p + j] = tmp;
+        }
+    }
+    */
+
+    /*
+    PERMUTATION 4: j → k → i
+
+    Outer loop: j (parallelized)
+    Updates full column of C incrementally
+    Requires initialization of C to 0
+    */
+
+    /*
+    #pragma omp parallel for default(none) shared(A,B,C,m,n,p) num_threads(threads)
+    for (unsigned int j = 0; j < p; j++) {
+        for (unsigned int k = 0; k < n; k++) {
+            double b_val = B->ptr[k * p + j];
+            for (unsigned int i = 0; i < m; i++) {
+                C->ptr[i * p + j] += A->ptr[i * n + k] * b_val;
+            }
+        }
+    }
+    */
+
+    /*
+    PERMUTATION 5: k → i → j
+
+    Outer loop: k (parallelized)
+    Multiple threads update same C[i][j] → race condition
+    */
+
+    /*
+    #pragma omp parallel for default(none) shared(A,B,C,m,n,p) num_threads(threads)
+    for (unsigned int k = 0; k < n; k++) {
+        for (unsigned int i = 0; i < m; i++) {
+            double a_val = A->ptr[i * n + k];
+            for (unsigned int j = 0; j < p; j++) {
+                #pragma omp atomic
+                C->ptr[i * p + j] += a_val * B->ptr[k * p + j];
+            }
+        }
+    }
+    */
+
+    /*
+    PERMUTATION 6: k → j → i
+
+    Outer loop: k (parallelized)
+    Column updates with contention on C
+    */
+
+#pragma omp parallel for default(none) shared(A, B, C, m, n, p) num_threads(threads)
+    for (unsigned int k = 0; k < n; k++)
+    {
+        for (unsigned int j = 0; j < p; j++)
+        {
+            double b_val = B->ptr[k * p + j];
+            for (unsigned int i = 0; i < m; i++)
+            {
+#pragma omp atomic
+                C->ptr[i * p + j] += A->ptr[i * n + k] * b_val;
+            }
+        }
+    }
 }
