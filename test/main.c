@@ -48,24 +48,25 @@ void primes_seq(unsigned int max, unsigned int verb)
 int primes_par(unsigned int max, unsigned int threads, unsigned int verb)
 {
     int count = 0;
-    omp_lock_t lock;
-    omp_init_lock(&lock);
+    // omp_lock_t lock;
+    // omp_init_lock(&lock);
     
-#pragma omp parallel shared(count, lock) num_threads(threads)
+#pragma omp parallel shared(count) num_threads(threads)
     {
+        int tmp = 0;
         // Loop until we reach the maximum number (1e7)
         while(count <= 1e7){
 
             // Alternate way
             // OMP atomic capture ensures that the value of count is captured 
             // and incremented atomically, preventing race conditions
-            // #pragma omp atomic capture
-            // tmp = count++;
+            #pragma omp atomic capture
+            tmp = count++;
 
-            omp_set_lock(&lock); // start critical section
-            int tmp = count;
-            count++;
-            omp_unset_lock(&lock); // end critical section
+            // omp_set_lock(&lock); // start critical section
+            // int tmp = count;
+            // count++;
+            // omp_unset_lock(&lock); // end critical section
 
             // Check if the captured value is a prime number and print it if verbose mode is enabled
             if(is_prime(tmp)){
@@ -74,7 +75,26 @@ int primes_par(unsigned int max, unsigned int threads, unsigned int verb)
             }
         }
     }
-    omp_destroy_lock(&lock);
+    // omp_destroy_lock(&lock);
+
+    return 0;
+}
+
+int main() {
+    
+    for(int i = 0; i < 7; i++){
+    	int threadCount = pow(2,i);
+    	
+    	printf("Thread = %d\n", threadCount);
+
+    	double start = omp_get_wtime();
+	    primes_par(1e7, 64, 0);
+	    double end = omp_get_wtime();
+	    
+	    double totalTime = end - start;
+	    printf("Done in %fs!\n\n", totalTime);    	
+	}
+    
 
     return 0;
 }

@@ -45,36 +45,28 @@ void primes_seq(unsigned int max, unsigned int verb)
     return;
 }
 
-int primes_par(unsigned int max, unsigned int threads, unsigned int verb)
+void primes_par(unsigned int max, unsigned int threads, unsigned int verb)
 {
     int count = 0;
-    omp_lock_t lock;
-    omp_init_lock(&lock);
-    
-#pragma omp parallel shared(count, lock) num_threads(threads)
-    {
-        // Loop until we reach the maximum number (1e7)
-        while(count <= 1e7){
 
-            // Alternate way
+    #pragma omp parallel num_threads(threads)
+    {
+        // Each thread will atomically capture the current value of count and then increment it
+        int tmp = 0;
+
+        // Loop until we reach the maximum number (1e7)
+        while(tmp < 1e7){
+
             // OMP atomic capture ensures that the value of count is captured 
             // and incremented atomically, preventing race conditions
-            // #pragma omp atomic capture
-            // tmp = count++;
-
-            omp_set_lock(&lock); // start critical section
-            int tmp = count;
-            count++;
-            omp_unset_lock(&lock); // end critical section
-
+            #pragma omp atomic capture
+            tmp = count++;
+            
             // Check if the captured value is a prime number and print it if verbose mode is enabled
-            if(is_prime(tmp)){
-                int isPrime = 1;
-                isPrime = isPrime + 1;
-            }
+            if(is_prime(tmp) && verb)
+                printf("%d\n", tmp);
         }
     }
-    omp_destroy_lock(&lock);
 
-    return 0;
+    return;
 }
