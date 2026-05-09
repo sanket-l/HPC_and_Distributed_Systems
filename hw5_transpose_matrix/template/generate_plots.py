@@ -170,6 +170,7 @@ def plot_exp4():
     ax.set_ylabel("Speedup over sequential")
     ax.set_title("Speedup: fine-grain vs. coarse-grain\n(n = 7,000)")
     ax.legend()
+    ax.set_ylim(0, 10)   # ← add this
     fig.tight_layout()
     out = os.path.join(FIGURES_DIR, "fig4_speedup_fine_vs_coarse.png")
     fig.savefig(out, bbox_inches="tight")
